@@ -28,10 +28,9 @@ jobs:
       - name: Build
         run: |
           go run -v .
-          sha256sum output/geosite-gfw.srs > output/geosite-gfw.srs.sha256sum
           mv output/geosite-gfw.srs .
-          mv output/geosite-gfw.srs.sha256sum .
           rmdir output
+          sha256sum geosite-gfw.srs > geosite-gfw.srs.sha256sum
       - name: Commit and push
         run: |
           git config user.email "github-action@users.noreply.github.com"
