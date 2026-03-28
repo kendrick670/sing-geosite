@@ -154,7 +154,7 @@ func main() {
 	}
 	defer outputRuleSet.Close()
 
-	err = srs.Write(outputRuleSet, plainRuleSet, 0)
+	err = srs.Write(outputRuleSet, plainRuleSet, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
