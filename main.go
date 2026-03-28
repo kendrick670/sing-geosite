@@ -1,5 +1,16 @@
 package main
 
+// gfwlist format (AdBlock Plus compatible):
+//   ||domain   -> domain suffix (matches .domain and all subdomains)
+//   domain     -> exact domain match
+//   @@||domain -> whitelist (excluded)
+//   ! comment  -> comment
+//   [section]  -> section header
+//
+// Example:
+//   ||google.com  -> RuleTypeDomainSuffix ".google.com"
+//   google.com    -> RuleTypeDomain "google.com"
+
 import (
 	"bufio"
 	"bytes"
@@ -49,13 +60,14 @@ func gfwlistDownload() ([]byte, error) {
 }
 
 var (
-	abpPattern       = regexp.MustCompile(`^\|\|(.+)`)
+	abpPattern        = regexp.MustCompile(`^\|\|(.+)`)
 	plainDomainPattern = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]$`)
 )
 
-func gfwlistParse(data []byte) ([]geosite.Item, error) {
+func gfwlistParse(data []byte) ([]geosite.Item, int, int, error) {
 	var items []geosite.Item
 	seen := make(map[string]bool)
+	domainCount, suffixCount := 0, 0
 
 	scanner := bufio.NewScanner(bytes.NewReader(data))
 	for scanner.Scan() {
@@ -72,8 +84,10 @@ func gfwlistParse(data []byte) ([]geosite.Item, error) {
 		}
 
 		domain := ""
+		itemType := geosite.RuleTypeDomain
 		if matches := abpPattern.FindStringSubmatch(line); len(matches) > 1 {
 			domain = matches[1]
+			itemType = geosite.RuleTypeDomainSuffix
 		} else if plainDomainPattern.MatchString(line) {
 			domain = line
 		}
@@ -83,13 +97,19 @@ func gfwlistParse(data []byte) ([]geosite.Item, error) {
 		}
 		seen[domain] = true
 
+		if itemType == geosite.RuleTypeDomainSuffix {
+			suffixCount++
+		} else {
+			domainCount++
+		}
+
 		items = append(items, geosite.Item{
-			Type:  geosite.RuleTypeDomainSuffix,
+			Type:  itemType,
 			Value: domain,
 		})
 	}
 
-	return items, scanner.Err()
+	return items, domainCount, suffixCount, scanner.Err()
 }
 
 func main() {
@@ -99,11 +119,11 @@ func main() {
 	}
 	log.Info("downloaded ", len(data), " bytes")
 
-	items, err := gfwlistParse(data)
+	items, domainCount, suffixCount, err := gfwlistParse(data)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Info("parsed ", len(items), " items")
+	log.Info("parsed ", len(items), " items (", domainCount, " domains, ", suffixCount, " suffixes)")
 
 	const code = "gfw"
 	const ruleSetOutput = "rule-set"
