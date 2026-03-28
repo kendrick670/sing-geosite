@@ -29,11 +29,14 @@ jobs:
         run: |
           go run -v .
           sha256sum output/geosite-gfw.srs > output/geosite-gfw.srs.sha256sum
+          mv output/geosite-gfw.srs .
+          mv output/geosite-gfw.srs.sha256sum .
+          rmdir output
       - name: Commit and push
         run: |
           git config user.email "github-action@users.noreply.github.com"
           git config user.name "GitHub Action"
-          git add -f output/
+          git add -f geosite-gfw.srs geosite-gfw.srs.sha256sum
           git diff --staged --quiet || git commit -m "$(date +%Y%m%d%H%M%S)"
           git push
       - name: Delete old releases
