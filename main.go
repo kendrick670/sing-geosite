@@ -126,7 +126,7 @@ func main() {
 	log.Info("parsed ", len(items), " items (", domainCount, " domains, ", suffixCount, " suffixes)")
 
 	const code = "gfw"
-	const ruleSetOutput = "rule-set"
+	const ruleSetOutput = "output"
 	os.RemoveAll(ruleSetOutput)
 	err = os.MkdirAll(ruleSetOutput, 0o755)
 	if err != nil {
